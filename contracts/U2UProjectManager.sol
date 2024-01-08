@@ -24,12 +24,6 @@ contract U2UProjectManager is Ownable {
 
   Counters.Counter private _projectCount;
   mapping(uint => LibStructs.Project) private _projects;
-  address[] public deployers;
-
-  modifier onlyDeployersSet {
-    require(deployers.length == 6, "U2U: deployers not deployed");
-    _;
-  }
     
   modifier onlyExistingProject(uint projectId) {
     require(_projects[projectId].projectOwner != address(0), "U2U: project does not exist");
@@ -45,20 +39,10 @@ contract U2UProjectManager is Ownable {
     _;
   }
 
-  // Addresses passed in MUST follow this order
-  // address u2uDeployerMintRoundZero
-  // address u2uDeployerMintRoundWhitelist
-  // address u2uDeployerMintRoundFCFS
-  // address u2uDeployerPremintRoundZero
-  // address u2uDeployerPremintRoundWhitelist
-  // address u2uDeployerPremintRoundFCFS
-  // function setDeployers(address[] calldata deployerAddresses) external onlyOwner {
-  //   require(deployerAddresses.length == 6, "U2U: there must be exactly 6 deployer addresses");
-  //   for (uint i = 0; i < 6; i++) {
-  //     require(deployerAddresses[i] != address(0), "U2U: deployer addresses must not be address(0)");
-  //     deployers.push(deployerAddresses[i]);
-  //   }
-  // }
+  modifier onlyValidRoundAmount(uint length) {
+    require(length >= 1 && length <= 6, "U2U: invalid round amount");
+    _;
+  }
 
   event CreateProject(
     address creator,
@@ -69,33 +53,18 @@ contract U2UProjectManager is Ownable {
     LibStructs.Round[] calldata rounds,
     LibStructs.Collection calldata collection,
     address projectOwner
-  // ) external onlyOwner onlyDeployersSet {
-  ) external onlyOwner {
-    require(rounds.length >= 2 && rounds.length <= 6, "U2U: invalid round amount");
+  ) external onlyOwner onlyValidRoundAmount(rounds.length) {
     require(collection.collectionAddress != address(0), "U2U: collection address invalid");
-    address[] memory roundAddresses = new address[](rounds.length);
     for (uint i = 0; i < rounds.length; i++) {
-      // require(rounds[i].start != 0, "U2U: start time cannot be 0");
-      // require(
-      //     rounds[i].end > rounds[i].start,
-      //     "U2U: end time must be higher than start time"
-      // );
-      // if (i + 1 < rounds.length) {
-      //     require(
-      //         rounds[i + 1].start > rounds[i].end,
-      //         "U2U: later round must start after previous round ends"
-      //     );
-      // }
-      _checkTimeRoundCurrent(rounds[i].start, rounds[i].end);
+      _checkTimeRoundCurrent(rounds[i].start, rounds[i].end, rounds[i].startClaim);
       if (i + 1 < rounds.length) {
         _checkTimeRoundBeforeLast(rounds[i].end, rounds[i + 1].start);
       }
-      // roundAddresses[i] = _createRound(rounds[i], collection);
-      // IRound(roundAddresses[i]).transferOwnership(owner());
     }
 
+    address[] memory roundAddresses = new address[](rounds.length);
     _projectCount.increment();
-      
+
     LibStructs.Project storage newProject = _projects[_projectCount.current()];
     newProject.projectOwner = projectOwner;
     newProject.roundAddresses = roundAddresses;
@@ -105,91 +74,20 @@ contract U2UProjectManager is Ownable {
     emit CreateProject(projectOwner, _projectCount.current(), collection);
   }
 
+  // Order of array: round zero addresses -> round whitelist addresses -> round FCFS addresses
   function setRoundContracts(
     uint projectId,
     address[] calldata roundAddresses
-  ) external onlyOwner {
+  ) external onlyOwner onlyValidRoundAmount(roundAddresses.length) {
     LibStructs.Project storage project = _projects[projectId];
     project.roundAddresses = roundAddresses;
   }
 
-  // function _createRound(
-  //   LibStructs.Round calldata round,
-  //   LibStructs.Collection calldata collection
-  // ) private returns (address) {
-  //   address deployed;
-  //   if (!collection.isPreminted) {
-  //     if (round.roundType == LibStructs.RoundType.RoundZero) {
-  //       deployed = IDeployer(deployers[0]).deploy(
-  //         _projectCount.current(),
-  //         round,
-  //         collection
-  //       );
-  //       return deployed;
-  //       // return deployers[0];
-  //     }
-
-  //     if (
-  //       round.roundType == LibStructs.RoundType.RoundWhitelist
-  //       || round.roundType == LibStructs.RoundType.RoundStaking
-  //     ) {
-  //       deployed = IDeployer(deployers[1]).deploy(
-  //         _projectCount.current(),
-  //         round,
-  //         collection
-  //       );
-  //       return deployed;
-  //       // return deployers[1];
-  //     }
-
-  //     // if (round.roundType == LibStructs.RoundType.RoundFCFS) {
-  //     // }
-  //     deployed = IDeployer(deployers[2]).deploy(
-  //       _projectCount.current(),
-  //       round,
-  //       collection
-  //     );
-  //     return deployed;
-  //     // return deployers[2];
-  //   } else {
-  //     if (round.roundType == LibStructs.RoundType.RoundZero) {
-  //       deployed = IDeployer(deployers[3]).deploy(
-  //         _projectCount.current(),
-  //         round,
-  //         collection
-  //       );
-  //       return deployed;
-  //       // return deployers[3];
-  //     }
-
-  //     if (
-  //       round.roundType == LibStructs.RoundType.RoundWhitelist
-  //       || round.roundType == LibStructs.RoundType.RoundStaking
-  //     ) {
-  //       deployed = IDeployer(deployers[4]).deploy(
-  //         _projectCount.current(),
-  //         round,
-  //         collection
-  //       );
-  //       return deployed;
-  //       // return deployers[4];
-  //     }
-
-  //     // if (round.roundType == LibStructs.RoundType.RoundFCFS) {
-  //     // }
-  //     deployed = IDeployer(deployers[5]).deploy(
-  //       _projectCount.current(),
-  //       round,
-  //       collection
-  //     );
-  //     return deployed;
-  //     // return deployers[5];
-  //   }
-  // }
-
-  function _checkTimeRoundCurrent(uint start, uint end) private pure {
+  function _checkTimeRoundCurrent(uint start, uint end, uint startClaim) private pure {
     require(start != 0, "U2U: start time cannot be 0");
     require(end > start, "U2U: end time must be higher than start time");
+    // require(startClaim != 0, "U2U: start time for claim period cannot be 0");
+    require(startClaim > end || startClaim == 0, "U2U: startClaim != 0 & < end");
   }
 
   function _checkTimeRoundBeforeLast(uint endRoundBefore, uint startRoundAfter) private pure {

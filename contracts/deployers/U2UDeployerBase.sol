@@ -9,11 +9,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IRound.sol";
 
 abstract contract U2UDeployerBase is Ownable {
-  address public projectManager = 0x658382AEBd7e20E7069B9EE470D2041dE792B1B0;                      // This is just a placeholder address
+  address public projectManager = 0xcCb0c2790F30AE2E806a49813A2a66037458d315;                      // This is just a placeholder address
   address[] public deployedContracts;
 
-  // modifier onlyProjectManager() {
-  //   require(msg.sender == projectManager, "U2U: this function can only be called by project manager");
-  //   _;
-  // }
+  function deployedContractsLength() external view returns (uint) {
+    return deployedContracts.length;
+  }
 }

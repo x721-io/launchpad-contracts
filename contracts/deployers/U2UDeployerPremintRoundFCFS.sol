@@ -17,7 +17,6 @@ contract U2UDeployerPremintRoundFCFS is IDeployer, U2UDeployerBase {
     uint projectCount,
     LibStructs.Round calldata round,
     LibStructs.Collection calldata collection
-  // ) external override onlyProjectManager returns (address) {
   ) external onlyOwner override returns (address) {
     address deployed = address(
       new U2UPremintRoundFCFS(
@@ -27,7 +26,6 @@ contract U2UDeployerPremintRoundFCFS is IDeployer, U2UDeployerBase {
       )
     );
     deployedContracts.push(deployed);
-    // IRound(deployed).transferOwnership(projectManager);
     IRound(deployed).transferOwnership(msg.sender);
     return deployed;
   }
