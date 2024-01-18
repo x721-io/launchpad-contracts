@@ -37,4 +37,11 @@ library LibStructs {
     uint id;
     uint amount;
   }
+
+  struct Timeframe {
+    uint8 hourStart;
+    uint8 minuteStart;
+    uint8 hourEnd;
+    uint8 minuteEnd;
+  }
 }

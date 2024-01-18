@@ -16,13 +16,21 @@ contract U2UDeployerPremintRoundZero is IDeployer, U2UDeployerBase {
   function deploy(
     uint projectCount,
     LibStructs.Round calldata round,
-    LibStructs.Collection calldata collection
+    LibStructs.Collection calldata collection,
+    LibStructs.Timeframe[] memory timeframes,
+    address _projectManager,
+    address _feeReceiver,
+    address requiredCollection
   ) external onlyOwner override returns (address) {
     address deployed = address(
       new U2UPremintRoundZero(
         projectCount,
         round,
-        collection
+        collection,
+        timeframes,
+        _projectManager,
+        _feeReceiver,
+        requiredCollection
       )
     );
     deployedContracts.push(deployed);

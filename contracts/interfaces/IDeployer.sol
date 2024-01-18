@@ -8,6 +8,10 @@ interface IDeployer {
   function deploy(
     uint projectCount,
     LibStructs.Round calldata round,
-    LibStructs.Collection calldata collection
+    LibStructs.Collection calldata collection,
+    LibStructs.Timeframe[] memory timeframes,
+    address _projectManager,
+    address _feeReceiver,
+    address requiredCollection
   ) external returns (address);
 }

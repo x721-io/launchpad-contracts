@@ -84,6 +84,43 @@
         "internalType": "struct LibStructs.Collection",
         "name": "collection",
         "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint8",
+            "name": "hourStart",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "minuteStart",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "hourEnd",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "minuteEnd",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct LibStructs.Timeframe[]",
+        "name": "timeframes",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "address",
+        "name": "_projectManager",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_feeReceiver",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -190,77 +227,9 @@
         "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "BuyERC1155U2U",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "buyer",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "projectId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "collection",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
       }
     ],
     "name": "BuyERC721",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "buyer",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "projectId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "collection",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "BuyERC721U2U",
     "type": "event"
   },
   {
@@ -360,141 +329,8 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "tokenId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "string",
-            "name": "tokenURI",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "supply",
-            "type": "uint256"
-          },
-          {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "account",
-                "type": "address"
-              },
-              {
-                "internalType": "uint96",
-                "name": "value",
-                "type": "uint96"
-              }
-            ],
-            "internalType": "struct IERC1155U2U.Part[]",
-            "name": "creators",
-            "type": "tuple[]"
-          },
-          {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "account",
-                "type": "address"
-              },
-              {
-                "internalType": "uint96",
-                "name": "value",
-                "type": "uint96"
-              }
-            ],
-            "internalType": "struct IERC1155U2U.Part[]",
-            "name": "royalties",
-            "type": "tuple[]"
-          },
-          {
-            "internalType": "bytes[]",
-            "name": "signatures",
-            "type": "bytes[]"
-          }
-        ],
-        "internalType": "struct IERC1155U2U.Mint1155Data",
-        "name": "data",
-        "type": "tuple"
-      }
-    ],
-    "name": "buyERC1155U2U",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "buyERC721",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "tokenId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "string",
-            "name": "tokenURI",
-            "type": "string"
-          },
-          {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "account",
-                "type": "address"
-              },
-              {
-                "internalType": "uint96",
-                "name": "value",
-                "type": "uint96"
-              }
-            ],
-            "internalType": "struct IERC721U2UMinimal.Part[]",
-            "name": "creators",
-            "type": "tuple[]"
-          },
-          {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "account",
-                "type": "address"
-              },
-              {
-                "internalType": "uint96",
-                "name": "value",
-                "type": "uint96"
-              }
-            ],
-            "internalType": "struct IERC721U2UMinimal.Part[]",
-            "name": "royalties",
-            "type": "tuple[]"
-          },
-          {
-            "internalType": "bytes[]",
-            "name": "signatures",
-            "type": "bytes[]"
-          }
-        ],
-        "internalType": "struct IERC721U2UMinimal.Mint721Data",
-        "name": "data",
-        "type": "tuple"
-      }
-    ],
-    "name": "buyERC721U2U",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -508,6 +344,19 @@
       }
     ],
     "name": "checkIsUserWhitelisted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "checkOnlyInTimeframe",
     "outputs": [
       {
         "internalType": "bool",
@@ -770,12 +619,66 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "getTimeframes",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint8",
+            "name": "hourStart",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "minuteStart",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "hourEnd",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "minuteEnd",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct LibStructs.Timeframe",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
       }
     ],
     "name": "isAdmin",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isInitialized",
     "outputs": [
       {
         "internalType": "bool",
@@ -1151,6 +1054,41 @@
       }
     ],
     "name": "setTime",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint8",
+            "name": "hourStart",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "minuteStart",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "hourEnd",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "minuteEnd",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct LibStructs.Timeframe[]",
+        "name": "timeframes",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "setTimeframes",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

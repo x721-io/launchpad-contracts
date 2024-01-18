@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
 import "./interfaces/IRound.sol";
-import "./interfaces/IDeployer.sol";
 
 import "./libraries/LibStructs.sol";
 
