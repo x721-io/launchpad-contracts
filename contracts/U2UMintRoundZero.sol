@@ -21,7 +21,7 @@ import "./libraries/LibStructs.sol";
 contract U2UMintRoundZero is Ownable, U2UBuyBase {
   using SafeMath for uint256;
   
-  IERC721Modified private _requiredCollection721 = IERC721Modified(0x02bbf482d7a8b027a5B1b8A84f4BccC1ab67D276);           // This is just a placeholder address
+  IERC721Modified private _requiredCollection721;
 
   mapping(address => bool) private _isUserWhitelisted;
 
@@ -36,57 +36,65 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
   constructor(
     uint projectId,
     LibStructs.Round memory round,
-    LibStructs.Collection memory collection
+    LibStructs.Collection memory collection,
+    LibStructs.Timeframe[] memory timeframes,
+    address _projectManager,
+    address _feeReceiver,
+    address requiredCollection721
   ) {
     _projectId = projectId;
     _round = round;
     _collection = collection;
+    projectManager = _projectManager;
+    feeReceiver = _feeReceiver;
+    _requiredCollection721 = IERC721Modified(requiredCollection721);
+    setTimeframes(timeframes);
   }
 
-  event BuyERC721U2U(address buyer, uint projectId, address collection, uint tokenId);
-  function buyERC721U2U(IERC721U2UMinimal.Mint721Data calldata data)
-    external
-    payable
-    onlyAfterStart
-    onlyBeforeEnd
-    onlyHolderOrWhitelisted
-    onlyBelowMaxAmount721
-    onlyBelowMaxAmountUser721
-    onlyUnlocked
-  {
-    require(_collection.isERC721, "U2U: project collection is not ERC721");
-    require(
-      _collection.isU2UCollection,
-      "U2U: this function only works with NFTs created from U2U contracts"
-    );
+  // event BuyERC721U2U(address buyer, uint projectId, address collection, uint tokenId);
+  // function buyERC721U2U(IERC721U2UMinimal.Mint721Data calldata data)
+  //   external
+  //   payable
+  //   onlyAfterStart
+  //   onlyBeforeEnd
+  //   onlyHolderOrWhitelisted
+  //   onlyBelowMaxAmount721
+  //   onlyBelowMaxAmountUser721
+  //   onlyUnlocked
+  // {
+  //   require(_collection.isERC721, "U2U: project collection is not ERC721");
+  //   require(
+  //     _collection.isU2UCollection,
+  //     "U2U: this function only works with NFTs created from U2U contracts"
+  //   );
 
-    address sender = msg.sender;
-    uint value = msg.value;
+  //   address sender = msg.sender;
+  //   uint value = msg.value;
 
-    require(
-      value >= _round.price,
-      "U2U: amount to transfer must be equal or greater than whitelist price"
-    );
+  //   require(
+  //     value >= _round.price,
+  //     "U2U: amount to transfer must be equal or greater than whitelist price"
+  //   );
 
-    _checkAndAddNewUser(sender);
+  //   _checkAndAddNewUser(sender);
 
-    _round.soldAmountNFT = _round.soldAmountNFT.add(1);
-    _amountBought[sender] = _amountBought[sender].add(1);
+  //   _round.soldAmountNFT = _round.soldAmountNFT.add(1);
+  //   _amountBought[sender] = _amountBought[sender].add(1);
 
-    IERC721U2UMinimal erc721Minimal = IERC721U2UMinimal(_collection.collectionAddress);
-    if (_round.startClaim == 0) {
-      erc721Minimal.mintAndTransfer(data, sender);
-    } else {
-      erc721Minimal.mintAndTransfer(data, address(this));
-    }
+  //   IERC721U2UMinimal erc721Minimal = IERC721U2UMinimal(_collection.collectionAddress);
+  //   if (_round.startClaim == 0) {
+  //     erc721Minimal.mintAndTransfer(data, sender);
+  //   } else {
+  //     erc721Minimal.mintAndTransfer(data, address(this));
+  //   }
 
-    LibStructs.Token memory newToken = LibStructs.Token(data.tokenId, 1);
-    _ownerOfAmount[sender].push(newToken);
+  //   LibStructs.Token memory newToken = LibStructs.Token(data.tokenId, 1);
+  //   _ownerOfAmount[sender].push(newToken);
 
-    _transferValueAndFee(value, _round.price);
+  //   _transferValueAndFee(value, _round.price);
 
-    emit BuyERC721U2U(sender, _projectId, _collection.collectionAddress, data.tokenId);
-  }
+  //   emit BuyERC721U2U(sender, _projectId, _collection.collectionAddress, data.tokenId);
+  // }
 
   event BuyERC721(address buyer, uint projectId, address collection, uint tokenId);
   function buyERC721()
@@ -100,6 +108,8 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
     onlyUnlocked
   {
     require(_collection.isERC721, "U2U: project collection is not ERC721");
+    bool isTimeframe = checkOnlyInTimeframe();
+    require(isTimeframe, "U2U: not in timeframe");
 
     address sender = msg.sender;
     uint value = msg.value;
@@ -129,63 +139,63 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
     emit BuyERC721(sender, _projectId, _collection.collectionAddress, tokenId);
   }
 
-  event BuyERC1155U2U(
-    address buyer,
-    uint projectId,
-    address collection,
-    uint tokenId,
-    uint amount
-  );
-  function buyERC1155U2U(IERC1155U2U.Mint1155Data calldata data)
-    external
-    payable
-    onlyAfterStart
-    onlyBeforeEnd
-    onlyHolderOrWhitelisted
-    onlyBelowMaxAmount1155(data.supply)
-    onlyBelowMaxAmountUser1155(data.supply)
-    onlyUnlocked
-  {
-    require(!_collection.isERC721, "U2U: project collection is not ERC1155");
-    require(
-      _collection.isU2UCollection,
-      "U2U: this function only works with NFTs created from U2U contracts"
-    );
+  // event BuyERC1155U2U(
+  //   address buyer,
+  //   uint projectId,
+  //   address collection,
+  //   uint tokenId,
+  //   uint amount
+  // );
+  // function buyERC1155U2U(IERC1155U2U.Mint1155Data calldata data)
+  //   external
+  //   payable
+  //   onlyAfterStart
+  //   onlyBeforeEnd
+  //   onlyHolderOrWhitelisted
+  //   onlyBelowMaxAmount1155(data.supply)
+  //   onlyBelowMaxAmountUser1155(data.supply)
+  //   onlyUnlocked
+  // {
+  //   require(!_collection.isERC721, "U2U: project collection is not ERC1155");
+  //   require(
+  //     _collection.isU2UCollection,
+  //     "U2U: this function only works with NFTs created from U2U contracts"
+  //   );
 
-    address sender = msg.sender;
-    uint value = msg.value;
-    uint totalPrice = data.supply.mul(_round.price);
+  //   address sender = msg.sender;
+  //   uint value = msg.value;
+  //   uint totalPrice = data.supply.mul(_round.price);
 
-    require(
-      value >= totalPrice,
-      "U2U: amount to transfer must be equal or greater than whitelist price"
-    );
+  //   require(
+  //     value >= totalPrice,
+  //     "U2U: amount to transfer must be equal or greater than whitelist price"
+  //   );
 
-    _round.soldAmountNFT = _round.soldAmountNFT.add(data.supply);
-    _amountBought[sender] = _amountBought[sender].add(data.supply);
+  //   _round.soldAmountNFT = _round.soldAmountNFT.add(data.supply);
+  //   _amountBought[sender] = _amountBought[sender].add(data.supply);
     
-    LibStructs.Token memory newToken = LibStructs.Token(data.tokenId, data.supply);
-    _ownerOfAmount[sender].push(newToken);
+  //   LibStructs.Token memory newToken = LibStructs.Token(data.tokenId, data.supply);
+  //   _ownerOfAmount[sender].push(newToken);
 
-    _checkAndAddNewUser(sender);
+  //   _checkAndAddNewUser(sender);
 
-    IERC1155U2U erc1155 = IERC1155U2U(_collection.collectionAddress);
-    if (_round.startClaim == 0) {
-      erc1155.mintAndTransfer(data, sender, data.supply);
-    } else {
-      erc1155.mintAndTransfer(data, address(this), data.supply);
-    }
+  //   IERC1155U2U erc1155 = IERC1155U2U(_collection.collectionAddress);
+  //   if (_round.startClaim == 0) {
+  //     erc1155.mintAndTransfer(data, sender, data.supply);
+  //   } else {
+  //     erc1155.mintAndTransfer(data, address(this), data.supply);
+  //   }
 
-    _transferValueAndFee(value, totalPrice);
+  //   _transferValueAndFee(value, totalPrice);
 
-    emit BuyERC1155U2U(
-      sender,
-      _projectId,
-      _collection.collectionAddress,
-      data.tokenId,
-      data.supply
-    );
-  }
+  //   emit BuyERC1155U2U(
+  //     sender,
+  //     _projectId,
+  //     _collection.collectionAddress,
+  //     data.tokenId,
+  //     data.supply
+  //   );
+  // }
 
   event BuyERC1155(
     address buyer,
@@ -205,6 +215,8 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
     onlyUnlocked
   {
     require(!_collection.isERC721, "U2U: project collection is not ERC1155");
+    bool isTimeframe = checkOnlyInTimeframe();
+    require(isTimeframe, "U2U: not in timeframe");
 
     address sender = msg.sender;
     uint value = msg.value;

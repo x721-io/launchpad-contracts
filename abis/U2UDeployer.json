@@ -103,6 +103,48 @@
         "internalType": "struct LibStructs.Collection",
         "name": "collection",
         "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint8",
+            "name": "hourStart",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "minuteStart",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "hourEnd",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "minuteEnd",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct LibStructs.Timeframe[]",
+        "name": "timeframes",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "address",
+        "name": "_projectManager",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_feeReceiver",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "requiredCollection",
+        "type": "address"
       }
     ],
     "name": "deploy",

@@ -14,13 +14,26 @@ import "./interfaces/IERC1155Modified.sol";
 import "./interfaces/IERC721U2UMinimal.sol";
 import "./interfaces/IERC1155U2U.sol";
 
-import "./U2UPremintBase.sol";
+import "./U2UBuyBase.sol";
 
 import "./libraries/LibStructs.sol";
 
-contract U2UPremintRoundFCFS is Ownable, U2UPremintBase {
+contract U2UMintRoundWhitelistCustomized is Ownable, U2UBuyBase {
   using SafeMath for uint256;
   
+  mapping(address => bool) private _isUserWhitelisted;
+  mapping(address => bool) public isAdmin;
+
+  modifier onlyWhitelisted() {
+    require(_isUserWhitelisted[msg.sender], "U2U: caller not whitelisted");
+    _;
+  }
+
+  modifier onlyAdmin() {
+    require(isAdmin[msg.sender] == true);
+    _;
+  }
+
   constructor(
     uint projectId,
     LibStructs.Round memory round,
@@ -37,16 +50,20 @@ contract U2UPremintRoundFCFS is Ownable, U2UPremintBase {
     setTimeframes(timeframes);
   }
 
+  function setAdmin(address admin, bool status) external onlyOwner {
+    isAdmin[admin] = status;
+  }
+
   // event BuyERC721U2U(address buyer, uint projectId, address collection, uint tokenId);
-  // function buyERC721U2U()
+  // function buyERC721U2U(IERC721U2UMinimal.Mint721Data calldata data)
   //   external
   //   payable
   //   onlyAfterStart
   //   onlyBeforeEnd
   //   onlyBelowMaxAmount721
   //   onlyBelowMaxAmountUser721
+  //   onlyWhitelisted
   //   onlyUnlocked
-  //   onlyTokenIdsAvailable
   // {
   //   require(_collection.isERC721, "U2U: project collection is not ERC721");
   //   require(
@@ -64,21 +81,22 @@ contract U2UPremintRoundFCFS is Ownable, U2UPremintBase {
 
   //   _checkAndAddNewUser(sender);
 
-  //   uint tokenIndex = _pickTokenByIndex();
-  //   uint tokenId = _tokens[tokenIndex].id;
   //   _round.soldAmountNFT = _round.soldAmountNFT.add(1);
   //   _amountBought[sender] = _amountBought[sender].add(1);
-  //   _removeTokenAtIndex(tokenIndex, 1);
 
   //   IERC721U2UMinimal erc721Minimal = IERC721U2UMinimal(_collection.collectionAddress);
-  //   erc721Minimal.safeTransferFrom(_collection.owner, address(this), tokenId);
+  //   if (_round.startClaim == 0) {
+  //     erc721Minimal.mintAndTransfer(data, sender);
+  //   } else {
+  //     erc721Minimal.mintAndTransfer(data, address(this));
+  //   }
 
-  //   LibStructs.Token memory newToken = LibStructs.Token(tokenId, 1);
+  //   LibStructs.Token memory newToken = LibStructs.Token(data.tokenId, 1);
   //   _ownerOfAmount[sender].push(newToken);
 
   //   _transferValueAndFee(value, _round.price);
 
-  //   emit BuyERC721U2U(sender, _projectId, _collection.collectionAddress, tokenId);
+  //   emit BuyERC721U2U(sender, _projectId, _collection.collectionAddress, data.tokenId);
   // }
 
   event BuyERC721(address buyer, uint projectId, address collection, uint tokenId);
@@ -89,8 +107,8 @@ contract U2UPremintRoundFCFS is Ownable, U2UPremintBase {
     onlyBeforeEnd
     onlyBelowMaxAmount721
     onlyBelowMaxAmountUser721
+    onlyWhitelisted
     onlyUnlocked
-    onlyTokenIdsAvailable
   {
     require(_collection.isERC721, "U2U: project collection is not ERC721");
     bool isTimeframe = checkOnlyInTimeframe();
@@ -106,14 +124,16 @@ contract U2UPremintRoundFCFS is Ownable, U2UPremintBase {
 
     _checkAndAddNewUser(sender);
 
-    uint tokenIndex = _pickTokenByIndex();
-    uint tokenId = _tokens[tokenIndex].id;
     _round.soldAmountNFT = _round.soldAmountNFT.add(1);
     _amountBought[sender] = _amountBought[sender].add(1);
-    _removeTokenAtIndex(tokenIndex, 1);
 
     IERC721Modified erc721Modified = IERC721Modified(_collection.collectionAddress);
-    erc721Modified.safeTransferNFTFrom(_collection.owner, address(this), tokenId);
+    uint tokenId;
+    if (_round.startClaim == 0) {
+      tokenId = erc721Modified.mintNFT(sender);
+    } else {
+      tokenId = erc721Modified.mintNFT(address(this));
+    }
 
     LibStructs.Token memory newToken = LibStructs.Token(tokenId, 1);
     _ownerOfAmount[sender].push(newToken);
@@ -130,13 +150,14 @@ contract U2UPremintRoundFCFS is Ownable, U2UPremintBase {
   //   uint tokenId,
   //   uint amount
   // );
-  // function buyERC1155U2U(uint amount)
+  // function buyERC1155U2U(IERC1155U2U.Mint1155Data calldata data)
   //   external
   //   payable
   //   onlyAfterStart
   //   onlyBeforeEnd
-  //   onlyBelowMaxAmount1155(amount)
-  //   onlyBelowMaxAmountUser1155(amount)
+  //   onlyBelowMaxAmount1155(data.supply)
+  //   onlyBelowMaxAmountUser1155(data.supply)
+  //   onlyWhitelisted
   //   onlyUnlocked
   // {
   //   require(!_collection.isERC721, "U2U: project collection is not ERC1155");
@@ -147,25 +168,26 @@ contract U2UPremintRoundFCFS is Ownable, U2UPremintBase {
 
   //   address sender = msg.sender;
   //   uint value = msg.value;
-  //   uint totalPrice = amount.mul(_round.price);
+  //   uint totalPrice = data.supply.mul(_round.price);
 
   //   require(
   //     value >= totalPrice,
   //     "U2U: amount to transfer must be equal or greater than whitelist price"
   //   );
-
-  //   _checkAndAddNewUser(sender);
     
-  //   uint tokenId = _tokens[0].id;
-  //   _round.soldAmountNFT = _round.soldAmountNFT.add(amount);
-  //   _amountBought[sender] = _amountBought[sender].add(amount);
-  //   _removeTokenAtIndex(0, amount);
+  //   _checkAndAddNewUser(sender);
+
+  //   _round.soldAmountNFT = _round.soldAmountNFT.add(data.supply);
+  //   _amountBought[sender] = _amountBought[sender].add(data.supply);
 
   //   IERC1155U2U erc1155 = IERC1155U2U(_collection.collectionAddress);
-  //   bytes memory _data;
-  //   erc1155.safeTransferFrom(_collection.owner, address(this), tokenId, amount, _data);
+  //   if (_round.startClaim == 0) {
+  //     erc1155.mintAndTransfer(data, sender, data.supply);
+  //   } else {
+  //     erc1155.mintAndTransfer(data, address(this), data.supply);
+  //   }
 
-  //   LibStructs.Token memory newToken = LibStructs.Token(tokenId, amount);
+  //   LibStructs.Token memory newToken = LibStructs.Token(data.tokenId, data.supply);
   //   _ownerOfAmount[sender].push(newToken);
 
   //   _transferValueAndFee(value, totalPrice);
@@ -174,8 +196,8 @@ contract U2UPremintRoundFCFS is Ownable, U2UPremintBase {
   //     sender,
   //     _projectId,
   //     _collection.collectionAddress,
-  //     tokenId,
-  //     amount
+  //     data.tokenId,
+  //     data.supply
   //   );
   // }
 
@@ -186,13 +208,14 @@ contract U2UPremintRoundFCFS is Ownable, U2UPremintBase {
     uint tokenId,
     uint amount
   );
-  function buyERC1155(uint amount)
+  function buyERC1155()
     external
     payable
     onlyAfterStart
     onlyBeforeEnd
-    onlyBelowMaxAmount1155(amount)
-    onlyBelowMaxAmountUser1155(amount)
+    onlyBelowMaxAmount1155(1)
+    onlyBelowMaxAmountUser1155(1)
+    onlyWhitelisted
     onlyUnlocked
   {
     require(!_collection.isERC721, "U2U: project collection is not ERC1155");
@@ -201,28 +224,96 @@ contract U2UPremintRoundFCFS is Ownable, U2UPremintBase {
 
     address sender = msg.sender;
     uint value = msg.value;
-    uint totalPrice = amount.mul(_round.price);
+    uint totalPrice = _round.price;
 
     require(
       value >= totalPrice,
       "U2U: amount to transfer must be equal or greater than whitelist price"
     );
-
+    
     _checkAndAddNewUser(sender);
 
-    uint tokenId = _tokens[0].id;
-    _round.soldAmountNFT = _round.soldAmountNFT.add(amount);
-    _amountBought[sender] = _amountBought[sender].add(amount);
-    _removeTokenAtIndex(0, amount);
+    _round.soldAmountNFT = _round.soldAmountNFT.add(1);
+    _amountBought[sender] = _amountBought[sender].add(1);
 
     IERC1155Modified erc1155Modified = IERC1155Modified(_collection.collectionAddress);
-    erc1155Modified.safeTransferNFTFrom(_collection.owner, address(this), tokenId, amount);
+    uint tokenId;
+    if (_round.startClaim == 0) {
+      tokenId = erc1155Modified.mintNFT(sender, 1);
+    } else {
+      tokenId = erc1155Modified.mintNFT(address(this), 1);
+    }
 
-    LibStructs.Token memory newToken = LibStructs.Token(tokenId, amount);
+    LibStructs.Token memory newToken = LibStructs.Token(tokenId, 1);
     _ownerOfAmount[sender].push(newToken);
 
     _transferValueAndFee(value, totalPrice);
 
-    emit BuyERC1155(sender, _projectId, _collection.collectionAddress, tokenId, amount);
+    emit BuyERC1155(sender, _projectId, _collection.collectionAddress, tokenId, 1);
+  }
+
+  event AddWhitelistOwner(uint projectId, address[] users);
+  function addWhitelistOwner(address[] calldata users)
+    external
+    onlyOwner
+  {
+    for (uint i = 0; i < users.length; i = i.add(1)) {
+      _isUserWhitelisted[users[i]] = true;
+    }
+
+    emit AddWhitelistOwner(_projectId, users);
+  }
+
+  event AddWhitelistAdmin(uint projectId, address[] users);
+  function addWhitelistAdmin(address[] calldata users)
+    external
+    onlyAdmin
+  {
+    require(
+      _round.roundType == LibStructs.RoundType.RoundWhitelist,
+      "U2U: admin can only call this function if this is a non-staking whitelist round"
+    );
+    for (uint i = 0; i < users.length; i = i.add(1)) {
+      _isUserWhitelisted[users[i]] = true;
+    }
+
+    emit AddWhitelistAdmin(_projectId, users);
+  }
+
+  event RemoveWhitelistOwner(uint projectId, address[] users);
+  function removeWhitelistOwner(address[] calldata users)
+    external
+    onlyOwner
+  {
+    for (uint i = 0; i < users.length; i = i.add(1)) {
+      _isUserWhitelisted[users[i]] = false;
+    }
+
+    emit RemoveWhitelistOwner(_projectId, users);
+  }
+
+  event RemoveWhitelistAdmin(uint projectId, address[] users);
+  function removeWhitelistAdmin(address[] calldata users)
+    external
+    onlyAdmin
+  {
+    require(
+      _round.roundType == LibStructs.RoundType.RoundWhitelist,
+      "U2U: admin can only call this function if this is a non-staking whitelist round"
+    );
+    for (uint i = 0; i < users.length; i = i.add(1)) {
+      _isUserWhitelisted[users[i]] = false;
+    }
+
+    emit RemoveWhitelistAdmin(_projectId, users);
+  }
+
+  function checkIsUserWhitelisted(address user)
+    external
+    onlyUnlocked
+    view
+    returns (bool)
+  {
+    return _isUserWhitelisted[user];
   }
 }

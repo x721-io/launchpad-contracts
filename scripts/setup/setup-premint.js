@@ -1,17 +1,17 @@
 require('dotenv').config();
 const ethers = require('ethers');
 
-const abiERC721 = require('../abis/ERC721.json');
-const abiU2UProjectManager = require('../abis/U2UProjectManager.json');
-const abiU2UDeployer = require('../abis/U2UDeployer.json');
-const abiU2UPremintRoundZero = require('../abis/U2UPremintRoundZero.json');
-const abiU2UPremintRoundWhitelist = require('../abis/U2UPremintRoundWhitelist.json');
-const abiU2UPremintRoundFCFS = require('../abis/U2UPremintRoundFCFS.json');
+const abiERC721 = require('../../abis/ERC721.json');
+const abiU2UProjectManager = require('../../abis/U2UProjectManager.json');
+const abiU2UDeployer = require('../../abis/U2UDeployer.json');
+const abiU2UPremintRoundZero = require('../../abis/U2UPremintRoundZero.json');
+const abiU2UPremintRoundWhitelist = require('../../abis/U2UPremintRoundWhitelist.json');
+const abiU2UPremintRoundFCFS = require('../../abis/U2UPremintRoundFCFS.json');
 
-const addressU2UProjectManager = '0xcCb0c2790F30AE2E806a49813A2a66037458d315';
-const addressU2UDeployerPremintRoundZero = '0xf703A3ABECDC517fdA16cE285320639556e5399e';
-const addressU2UDeployerPremintRoundWhitelist = '0x8fA92B85fD688c978BaB751B3F610be21c12939d';
-const addressU2UDeployerPremintRoundFCFS = '0x6761628B33a3005040Ba4682dDf1fDd442e912ab';
+const addressU2UProjectManager = '0xf8366cb80d5d231fF517eC7658d185B934B6E363';
+const addressU2UDeployerPremintRoundZero = '0x9F93B735058c43441b1585bB151D1B03Ca17D41D';
+const addressU2UDeployerPremintRoundWhitelist = '0xD2D26098E222FF6D87f6C16736c52820FE84274B';
+const addressU2UDeployerPremintRoundFCFS = '0x1808F7C065331f514Da4998a32AE50ADd50bF820';
 
 const addressCollectionOwner = '0x7c5d333f2ce3e919E5B17a237f223D6bAa35a345';
 const addressAccount3 = '0x34f2Cecf1d7cf55A8D2B392Ba9EAb0770304478F';

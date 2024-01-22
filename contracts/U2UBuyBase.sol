@@ -30,20 +30,23 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
   using LibStructs for LibStructs.Round;
   using LibStructs for LibStructs.Collection;
 
-  bool public isLocked = false;
   uint internal _projectId;
   uint internal _amountUser;
   LibStructs.Collection internal _collection;
   LibStructs.Round internal _round;
 
-  address public projectManager = 0xcCb0c2790F30AE2E806a49813A2a66037458d315;                      // This is just a placeholder address
-  address public feeReceiver = 0xD069121812e49ab933454f2fa1F6fb852bBe67cd;
+  address public projectManager;                      // This is just a placeholder address
+  address public feeReceiver;
   uint16 public feePercent = 500;  // 5%
+  bool public isLocked = false;
+  bool public isInitialized = false;
 
   mapping(address => bool) public isUserJoined;
   mapping(address => uint) internal _amountBought;       // User's address => Amount bought
   mapping(address => uint) internal _amountClaimed;      // User's address => Amount claimed
   mapping(address => LibStructs.Token[]) internal _ownerOfAmount;
+
+  LibStructs.Timeframe[] internal _timeframes;
 
   modifier onlyUnlocked {
     require(!isLocked, "U2U: locked");
@@ -124,6 +127,37 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
 
     require(isSenderARound, "U2U: caller not contract round");
     _;
+  }
+
+  function checkOnlyInTimeframe() public view returns (bool) {
+    (uint8 currentHour, uint8 currentMinute) = _getCurrentTime();
+    for (uint i = 0; i < uint(_timeframes.length); i = i.add(1)) {
+      if (
+        currentHour >= _timeframes[i].hourStart &&
+        currentMinute >= _timeframes[i].minuteStart &&
+        currentHour <= _timeframes[i].hourEnd &&
+        currentMinute <= _timeframes[i].minuteEnd
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function _getCurrentTime() internal view returns (uint8, uint8) {
+    uint8 currentHour = uint8((uint32(block.timestamp) / 3600) % 24);
+    uint8 currentMinute = uint8((uint32(block.timestamp) / 60) % 60);
+    return (currentHour, currentMinute);
+  }
+
+  function setTimeframes(LibStructs.Timeframe[] memory timeframes) public {
+    require(msg.sender == owner() || isInitialized == false, "U2U: not owner");
+    isInitialized = true;
+    delete _timeframes;
+    for (uint i = 0; i < timeframes.length; i = i.add(1)) {
+      _timeframes.push(timeframes[i]);
+    }
   }
 
   function claimERC721()
@@ -316,6 +350,19 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     returns (LibStructs.Collection memory)
   {
     return _collection;
+  }
+
+  function getTimeframes(uint index) external view returns (LibStructs.Timeframe memory) {
+    // LibStructs.Timeframe[] memory timeframes = new LibStructs.Timeframe[](_timeframes.length);
+    // for (uint i = 0; i < _timeframes.length; i = i.add(1)) {
+    //   timeframes[i] = _timeframes[i];
+    // }
+
+    return _timeframes[index];
+  }
+
+  function getTimeframesLength() external view returns (uint) {
+    return _timeframes.length;
   }
 
   function onERC721Received(
