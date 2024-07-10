@@ -18,7 +18,7 @@ contract NFT is IERC721Modified, ERC721, Ownable {
     Counters.Counter private _tokenIdCounter;
 
     uint256 public maxSupply;
-    
+
     mapping(address => bool) _operators;
 
     modifier onlyOperator() {
@@ -34,19 +34,25 @@ contract NFT is IERC721Modified, ERC721, Ownable {
         _operators[operator_] = status_;
     }
 
-    function balanceOf(address owner_) public view override(ERC721, IERC721Modified) returns (uint) {
+    function balanceOf(
+        address owner_
+    ) public view override(ERC721, IERC721Modified) returns (uint) {
         return super.balanceOf(owner_);
     }
 
     function mintNFT(address to) external override onlyOperator returns (uint) {
-        require(_tokenIdCounter.current() < maxSupply);
+        require(_tokenIdCounter.current() + 1 < maxSupply);
         _tokenIdCounter.increment();
         _safeMint(to, _tokenIdCounter.current());
 
         return _tokenIdCounter.current();
     }
 
-    function mintBatchNFT(address to, uint amount) external onlyOperator returns (uint[] memory) {
+    function mintBatchNFT(
+        address to,
+        uint amount
+    ) external onlyOperator returns (uint[] memory) {
+        require(_tokenIdCounter.current() + amount < maxSupply);
         uint[] memory tokenIds = new uint[](amount);
         for (uint i = 0; i < amount; i++) {
             _tokenIdCounter.increment();
@@ -56,8 +62,12 @@ contract NFT is IERC721Modified, ERC721, Ownable {
 
         return tokenIds;
     }
-    
-    function safeTransferNFTFrom(address from, address to, uint tokenId) external override {
+
+    function safeTransferNFTFrom(
+        address from,
+        address to,
+        uint tokenId
+    ) external override {
         super.safeTransferFrom(from, to, tokenId);
     }
 
