@@ -1,21 +1,49 @@
+const isPremint = false;
+
 async function main() {
   const [deployer] = await ethers.getSigners();
+  const contractNames = ["U2UDeployerMintRoundZero", "U2UDeployerMintRoundWhitelist", "U2UDeployerMintRoundFCFS"];
+  const preMintContractNames = ["U2UDeployerPremintRoundZero", "U2UDeployerPremintRoundWhitelist", "U2UDeployerPremintRoundFCFS"];
 
   console.log("Deploying contracts with the account:", deployer.address);
 
-  const u2uDeployerMintRoundZero = await ethers.deployContract("U2UDeployerMintRoundZero");
-  const u2uDeployerMintRoundWhitelist = await ethers.deployContract("U2UDeployerMintRoundWhitelist");
-  const u2uDeployerMintRoundFCFS = await ethers.deployContract("U2UDeployerMintRoundFCFS");
-  const u2uDeployerPremintRoundZero = await ethers.deployContract("U2UDeployerPremintRoundZero");
-  const u2uDeployerPremintRoundWhitelist = await ethers.deployContract("U2UDeployerPremintRoundWhitelist");
-  const u2uDeployerPremintRoundFCFS = await ethers.deployContract("U2UDeployerPremintRoundFCFS");
-
-  console.log("u2uDeployerMintRoundZero address:", await u2uDeployerMintRoundZero.getAddress());
-  console.log("u2uDeployerMintRoundWhitelist address:", await u2uDeployerMintRoundWhitelist.getAddress());
-  console.log("u2uDeployerMintRoundFCFS address:", await u2uDeployerMintRoundFCFS.getAddress());
-  console.log("u2uDeployerPremintRoundZero address:", await u2uDeployerPremintRoundZero.getAddress());
-  console.log("u2uDeployerPremintRoundWhitelist address:", await u2uDeployerPremintRoundWhitelist.getAddress());
-  console.log("u2uDeployerPremintRoundFCFS address:", await u2uDeployerPremintRoundFCFS.getAddress());
+  for(let i = 0; i < contractNames.length; i++) {
+    const name = contractNames[i];
+    const u2uDeployer = await ethers.deployContract(name);
+    const address = await u2uDeployer.getAddress();
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    try {
+      const verificationId = await hre.run("verify:verify", {
+        address: address,
+        contract: `contracts/deployers/${name}.sol:${name}`,
+        constructorArguments: [],
+      });
+    } catch(err) {
+      console.log(err)
+    }
+    console.log('Deployed: ', address);
+  }
+  
+  
+  if(isPremint) {
+    for(let i = 0; i < preMintContractNames.length; i++) {
+      const name = contractNames[i];
+      const u2uDeployer = await ethers.deployContract(name);
+      const address = await u2uDeployer.getAddress();
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      try {
+        const verificationId = await hre.run("verify:verify", {
+          address: address,
+          contract: `contracts/deployers/${name}.sol:${name}`,
+          constructorArguments: [],
+        });
+      } catch(err) {
+        console.log(err)
+      }
+      console.log('Deployed Premint: ', address);
+    }
+    console.log('Premint Deployed: ', premintU2uDeployer)
+  }
 }
 
 main()

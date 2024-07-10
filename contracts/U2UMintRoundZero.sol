@@ -8,6 +8,7 @@ pragma abicoder v2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "./interfaces/IERC721Modified.sol";
 import "./interfaces/IERC1155Modified.sol";
@@ -18,7 +19,7 @@ import "./U2UBuyBase.sol";
 
 import "./libraries/LibStructs.sol";
 
-contract U2UMintRoundZero is Ownable, U2UBuyBase {
+contract U2UMintRoundZero is Ownable, U2UBuyBase, ReentrancyGuard {
   using SafeMath for uint256;
   
   IERC721Modified private _requiredCollection721;
@@ -106,6 +107,7 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
     onlyBelowMaxAmount721
     onlyBelowMaxAmountUser721
     onlyUnlocked
+    nonReentrant
   {
     require(_collection.isERC721, "U2U: project collection is not ERC721");
     bool isTimeframe = checkOnlyInTimeframe();
@@ -129,10 +131,9 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
       tokenId = erc721Modified.mintNFT(sender);
     } else {
       tokenId = erc721Modified.mintNFT(address(this));
+      LibStructs.Token memory newToken = LibStructs.Token(tokenId, 1);
+      _ownerOfAmount[sender].push(newToken);
     }
-
-    LibStructs.Token memory newToken = LibStructs.Token(tokenId, 1);
-    _ownerOfAmount[sender].push(newToken);
 
     _transferValueAndFee(value, _round.price);
 
@@ -237,10 +238,9 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
       tokenId = erc1155Modified.mintNFT(sender, amount);
     } else {
       tokenId = erc1155Modified.mintNFT(address(this), amount);
+       LibStructs.Token memory newToken = LibStructs.Token(tokenId, amount);
+      _ownerOfAmount[sender].push(newToken);
     }
-
-    LibStructs.Token memory newToken = LibStructs.Token(tokenId, amount);
-    _ownerOfAmount[sender].push(newToken);
 
     _transferValueAndFee(value, totalPrice);
 
