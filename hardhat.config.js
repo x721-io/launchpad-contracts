@@ -39,12 +39,18 @@ module.exports = {
       url: "https://rpc-nebulas-testnet.uniultra.xyz",
       accounts: [process.env.PRIVATE_KEY_1],
       gas: 8000000
+    },
+    u2uMainnet: {
+      url: "https://rpc-mainnet.u2u.xyz/",
+      accounts: [process.env.PRIVATE_KEY_1],
+      gas: 8000000
     }
   },
   etherscan: {
-    apiKey: {
-      u2uTestnet: "hi"
-    },
+    // apiKey: {
+    //   u2uTestnet: "hi"
+    // },
+    apiKey: "RX2H5QQVMY18Q49HDBDC9UTDWES1VNSHEZ",
     customChains: [
       {
         network: "u2uTestnet",
@@ -53,7 +59,15 @@ module.exports = {
           apiURL: "https://testnet.u2uscan.xyz/api",
           browserURL: "https://testnet.u2uscan.xyz/"
         }
-      }
+      },
+      {
+        network: "u2uMainnet",
+        chainId: 39,
+        urls: {
+          apiURL: "https://u2uscan.xyz/api",
+          browserURL: "https://u2uscan.xyz/"
+        }
+      },
     ]
   },
 };

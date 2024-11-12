@@ -3,11 +3,11 @@ async function main() {
 
   console.log("Deploying contracts with the account:", deployer.address);
 
-  const nft721 = await ethers.deployContract("NFT");
-  const nft1155 = await ethers.deployContract("NFT1155");
+  const nft721 = await ethers.deployContract("ERC721U2UxBitget");
+  // const nft1155 = await ethers.deployContract("NFT1155");
 
   console.log("nft721 address:", await nft721.getAddress());
-  console.log("nft1155 address:", await nft1155.getAddress());
+  // console.log("nft1155 address:", await nft1155.getAddress());
 }
 
 main()

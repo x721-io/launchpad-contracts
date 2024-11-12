@@ -27,7 +27,7 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
 
   modifier onlyHolderOrWhitelisted() {
     require(
-      _requiredCollection721.balanceOf(msg.sender) > 0 || _isUserWhitelisted[msg.sender],
+      (address(_requiredCollection721) != address(0) && _requiredCollection721.balanceOf(msg.sender) > 0) || _isUserWhitelisted[msg.sender],
       "U2U: only NFT holders can buy"
     );
     _;
@@ -119,9 +119,9 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
       "U2U: amount to transfer must be equal or greater than whitelist price"
     );
 
+    _checkAndAddNewUser(sender);
     _round.soldAmountNFT = _round.soldAmountNFT.add(1);
     _amountBought[sender] = _amountBought[sender].add(1);
-    _checkAndAddNewUser(sender);
 
     IERC721Modified erc721Modified = IERC721Modified(_collection.collectionAddress);
     uint tokenId;
