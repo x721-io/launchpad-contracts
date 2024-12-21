@@ -172,9 +172,8 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     address sender = msg.sender;
     LibStructs.Token[] memory ownerOfAmount = _ownerOfAmount[sender];
     delete _ownerOfAmount[sender];
+    _amountClaimed[sender] = _amountClaimed[sender].add(ownerOfAmount.length);
     for (uint i = 0; i < ownerOfAmount.length; i = i.add(1)) {
-      _amountClaimed[sender] = ownerOfAmount.length;
-
       if (_collection.isU2UCollection) {
         IERC721U2UMinimal erc721Minimal = IERC721U2UMinimal(_collection.collectionAddress);
         erc721Minimal.safeTransferFrom(address(this), sender, ownerOfAmount[i].id);
