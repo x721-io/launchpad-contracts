@@ -85,6 +85,7 @@ abstract contract U2UPremintBase is U2UBuyBase {
       _totalAmountTokens.add(totalNewTokens) <= _round.maxAmountNFT,
       "U2U: total NFTs can't exceed maxAmountNFT"
     );
+    _totalAmountTokens = _totalAmountTokens.add(totalNewTokens);
 
     if (_collection.isERC721) {
       if (_tokens.length > 0) {
