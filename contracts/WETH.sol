@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.20;
 
 // // For Remix IDE usage
 // import "@openzeppelin/contracts@3.4/token/ERC20/ERC20.sol";

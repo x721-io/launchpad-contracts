@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.20;
 pragma abicoder v2;
 
 import "../interfaces/IDeployer.sol";
@@ -12,6 +12,8 @@ import "../libraries/LibStructs.sol";
 contract U2UDeployerPremintRoundZero is IDeployer, U2UDeployerBase {
   using LibStructs for LibStructs.Round;
   using LibStructs for LibStructs.Collection;
+
+  constructor() U2UDeployerBase(msg.sender) {}
 
   function deploy(
     uint projectCount,

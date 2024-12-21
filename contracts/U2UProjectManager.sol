@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.20;
 pragma abicoder v2;
 
 // For Remix IDE use
@@ -7,23 +7,21 @@ pragma abicoder v2;
 // import "@openzeppelin/contracts@3.4/access/Ownable.sol";
 // import "@openzeppelin/contracts@3.4/utils/Counters.sol";
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 import "./interfaces/IRound.sol";
 
 import "./libraries/LibStructs.sol";
 
 contract U2UProjectManager is Ownable {
-  using SafeMath for uint256;
   using LibStructs for LibStructs.Round;
   using LibStructs for LibStructs.Collection;
-  using Counters for Counters.Counter;
 
-  Counters.Counter private _projectCount;
+  uint256 private _projectCount;
   mapping(uint => LibStructs.Project) private _projects;
-    
+
+  constructor(address initialOwner) Ownable(initialOwner) {}
+
   modifier onlyExistingProject(uint projectId) {
     require(_projects[projectId].projectOwner != address(0), "U2U: project does not exist");
     _;
@@ -62,15 +60,15 @@ contract U2UProjectManager is Ownable {
     }
 
     address[] memory roundAddresses = new address[](rounds.length);
-    _projectCount.increment();
+    _projectCount = _projectCount + 1;
 
-    LibStructs.Project storage newProject = _projects[_projectCount.current()];
+    LibStructs.Project storage newProject = _projects[_projectCount];
     newProject.projectOwner = projectOwner;
     newProject.roundAddresses = roundAddresses;
     newProject.collection = collection;
-    _projects[_projectCount.current()] = newProject;
+    _projects[_projectCount] = newProject;
 
-    emit CreateProject(projectOwner, _projectCount.current(), collection);
+    emit CreateProject(projectOwner, _projectCount, collection);
   }
 
   // Order of array: round zero addresses -> round whitelist addresses -> round FCFS addresses
@@ -103,7 +101,7 @@ contract U2UProjectManager is Ownable {
     onlyBeforeStart(projectId)
   {
     address[] memory roundAddresses = _projects[projectId].roundAddresses;
-    for (uint i = 0; i < roundAddresses.length; i = i.add(1)) {
+    for (uint i = 0; i < roundAddresses.length; i = i + 1) {
       IRound(roundAddresses[i]).setCollection(newCollection);
     }
     _projects[projectId].collection = newCollection;
@@ -119,6 +117,6 @@ contract U2UProjectManager is Ownable {
   }
 
   function getProjectCount() external view returns (uint) {
-    return _projectCount.current();
+    return _projectCount;
   }
 }
