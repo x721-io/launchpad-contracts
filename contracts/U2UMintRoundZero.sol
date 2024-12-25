@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.20;
 pragma abicoder v2;
 
 // For Remix IDE use
 // import "@openzeppelin/contracts@3.4/math/SafeMath.sol";
 // import "@openzeppelin/contracts@3.4/access/Ownable.sol";
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IERC721Modified.sol";
@@ -19,7 +18,6 @@ import "./U2UBuyBase.sol";
 import "./libraries/LibStructs.sol";
 
 contract U2UMintRoundZero is Ownable, U2UBuyBase {
-  using SafeMath for uint256;
   
   IERC721Modified private _requiredCollection721;
 
@@ -27,7 +25,7 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
 
   modifier onlyHolderOrWhitelisted() {
     require(
-      _requiredCollection721.balanceOf(msg.sender) > 0 || _isUserWhitelisted[msg.sender],
+      (address(_requiredCollection721) != address(0) && _requiredCollection721.balanceOf(msg.sender) > 0) || _isUserWhitelisted[msg.sender],
       "U2U: only NFT holders can buy"
     );
     _;
@@ -41,7 +39,7 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
     address _projectManager,
     address _feeReceiver,
     address requiredCollection721
-  ) {
+  ) U2UBuyBase(msg.sender) {
     _projectId = projectId;
     _round = round;
     _collection = collection;
@@ -119,9 +117,9 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
       "U2U: amount to transfer must be equal or greater than whitelist price"
     );
 
-    _round.soldAmountNFT = _round.soldAmountNFT.add(1);
-    _amountBought[sender] = _amountBought[sender].add(1);
     _checkAndAddNewUser(sender);
+    _round.soldAmountNFT = _round.soldAmountNFT + 1;
+    _amountBought[sender] = _amountBought[sender] + 1;
 
     IERC721Modified erc721Modified = IERC721Modified(_collection.collectionAddress);
     uint tokenId;
@@ -138,64 +136,6 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
 
     emit BuyERC721(sender, _projectId, _collection.collectionAddress, tokenId);
   }
-
-  // event BuyERC1155U2U(
-  //   address buyer,
-  //   uint projectId,
-  //   address collection,
-  //   uint tokenId,
-  //   uint amount
-  // );
-  // function buyERC1155U2U(IERC1155U2U.Mint1155Data calldata data)
-  //   external
-  //   payable
-  //   onlyAfterStart
-  //   onlyBeforeEnd
-  //   onlyHolderOrWhitelisted
-  //   onlyBelowMaxAmount1155(data.supply)
-  //   onlyBelowMaxAmountUser1155(data.supply)
-  //   onlyUnlocked
-  // {
-  //   require(!_collection.isERC721, "U2U: project collection is not ERC1155");
-  //   require(
-  //     _collection.isU2UCollection,
-  //     "U2U: this function only works with NFTs created from U2U contracts"
-  //   );
-
-  //   address sender = msg.sender;
-  //   uint value = msg.value;
-  //   uint totalPrice = data.supply.mul(_round.price);
-
-  //   require(
-  //     value >= totalPrice,
-  //     "U2U: amount to transfer must be equal or greater than whitelist price"
-  //   );
-
-  //   _round.soldAmountNFT = _round.soldAmountNFT.add(data.supply);
-  //   _amountBought[sender] = _amountBought[sender].add(data.supply);
-    
-  //   LibStructs.Token memory newToken = LibStructs.Token(data.tokenId, data.supply);
-  //   _ownerOfAmount[sender].push(newToken);
-
-  //   _checkAndAddNewUser(sender);
-
-  //   IERC1155U2U erc1155 = IERC1155U2U(_collection.collectionAddress);
-  //   if (_round.startClaim == 0) {
-  //     erc1155.mintAndTransfer(data, sender, data.supply);
-  //   } else {
-  //     erc1155.mintAndTransfer(data, address(this), data.supply);
-  //   }
-
-  //   _transferValueAndFee(value, totalPrice);
-
-  //   emit BuyERC1155U2U(
-  //     sender,
-  //     _projectId,
-  //     _collection.collectionAddress,
-  //     data.tokenId,
-  //     data.supply
-  //   );
-  // }
 
   event BuyERC1155(
     address buyer,
@@ -220,15 +160,15 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
 
     address sender = msg.sender;
     uint value = msg.value;
-    uint totalPrice = amount.mul(_round.price);
+    uint totalPrice = amount * _round.price;
 
     require(
       value >= totalPrice,
       "U2U: amount to transfer must be equal or greater than whitelist price"
     );
     
-    _round.soldAmountNFT = _round.soldAmountNFT.add(amount);
-    _amountBought[sender] = _amountBought[sender].add(amount);
+    _round.soldAmountNFT = _round.soldAmountNFT + amount;
+    _amountBought[sender] = _amountBought[sender] + amount;
     _checkAndAddNewUser(sender);
 
     IERC1155Modified erc1155Modified = IERC1155Modified(_collection.collectionAddress);
@@ -254,7 +194,7 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
     onlyOwner
     onlyBeforeStart
   {
-    for (uint i = 0; i < users.length; i = i.add(1)) {
+    for (uint i = 0; i < users.length; i = i + 1) {
       _isUserWhitelisted[users[i]] = true;
     }
 
@@ -268,7 +208,7 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
     onlyOwner
     onlyBeforeStart
   {
-    for (uint i = 0; i < users.length; i = i.add(1)) {
+    for (uint i = 0; i < users.length; i = i + 1) {
       _isUserWhitelisted[users[i]] = false;
     }
 

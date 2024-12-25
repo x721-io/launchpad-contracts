@@ -1,19 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.20;
 pragma abicoder v2;
 
-// For Remix IDE use
-// import "@openzeppelin/contracts@3.4/math/SafeMath.sol";
-// import "@openzeppelin/contracts@3.4/access/Ownable.sol";
-// import "@openzeppelin/contracts@3.4/token/ERC721/IERC721Receiver.sol";
-// import "@openzeppelin/contracts@3.4/token/ERC1155/IERC1155Receiver.sol";
-// import "@openzeppelin/contracts@3.4/introspection/ERC165.sol";
-
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import "@openzeppelin/contracts/introspection/ERC165.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 import "./interfaces/IProjectManager.sol";
 import "./interfaces/IRound.sol";
@@ -25,10 +17,11 @@ import "./interfaces/IERC1155Modified.sol";
 import "./libraries/LibStructs.sol";
 
 abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC165 {
-  using SafeMath for uint256;
   using LibStructs for LibStructs.RoundType;
   using LibStructs for LibStructs.Round;
   using LibStructs for LibStructs.Collection;
+
+  constructor(address initialOwner) Ownable(initialOwner) {}
 
   uint internal _projectId;
   uint internal _amountUser;
@@ -71,7 +64,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
 
   modifier onlyBelowMaxAmount1155(uint amount) {
     require(
-      _round.soldAmountNFT.add(amount) <= _round.maxAmountNFT || _round.maxAmountNFT == 0,
+      _round.soldAmountNFT + amount <= _round.maxAmountNFT || _round.maxAmountNFT == 0,
       "U2U: no supply"
     );
     _;
@@ -79,7 +72,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
 
   modifier onlyBelowMaxAmountUser1155(uint amount) {
     require(
-      _amountBought[msg.sender].add(amount) <= _round.maxAmountNFTPerWallet || _round.maxAmountNFTPerWallet == 0,
+      _amountBought[msg.sender] + amount <= _round.maxAmountNFTPerWallet || _round.maxAmountNFTPerWallet == 0,
       "U2U: your amount reached"
     );
     _;
@@ -119,7 +112,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     address[] memory roundAddresses = IProjectManager(projectManager).getProject(_projectId).roundAddresses;
     bool isSenderARound = false;
 
-    for (uint i = 0; i < roundAddresses.length; i = i.add(1)) {
+    for (uint i = 0; i < roundAddresses.length; i = i + 1) {
       if (roundAddresses[i] == sender) {
         isSenderARound = true;
       }
@@ -131,7 +124,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
 
   function checkOnlyInTimeframe() public view returns (bool) {
     (uint8 currentHour, uint8 currentMinute) = _getCurrentTime();
-    for (uint i = 0; i < uint(_timeframes.length); i = i.add(1)) {
+    for (uint i = 0; i < uint(_timeframes.length); i = i + 1) {
       if (
         currentHour >= _timeframes[i].hourStart &&
         currentMinute >= _timeframes[i].minuteStart &&
@@ -155,7 +148,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     require(msg.sender == owner() || isInitialized == false, "U2U: not owner");
     isInitialized = true;
     delete _timeframes;
-    for (uint i = 0; i < timeframes.length; i = i.add(1)) {
+    for (uint i = 0; i < timeframes.length; i = i + 1) {
       _timeframes.push(timeframes[i]);
     }
   }
@@ -172,8 +165,9 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     address sender = msg.sender;
     LibStructs.Token[] memory ownerOfAmount = _ownerOfAmount[sender];
     delete _ownerOfAmount[sender];
-    for (uint i = 0; i < ownerOfAmount.length; i = i.add(1)) {
-      _amountClaimed[sender] = ownerOfAmount.length;
+    _amountClaimed[sender] = _amountClaimed[sender] + ownerOfAmount.length;
+    for (uint i = 0; i < ownerOfAmount.length; i = i + 1) {
+      // _amountClaimed[sender] = ownerOfAmount.length;
 
       if (_collection.isU2UCollection) {
         IERC721U2UMinimal erc721Minimal = IERC721U2UMinimal(_collection.collectionAddress);
@@ -197,8 +191,8 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     address sender = msg.sender;
     LibStructs.Token[] memory ownerOfAmount = _ownerOfAmount[sender];
     delete _ownerOfAmount[sender];
-    for (uint i = 0; i < ownerOfAmount.length; i = i.add(1)) {
-      _amountClaimed[sender] = _amountClaimed[sender].add(ownerOfAmount[i].amount);
+    for (uint i = 0; i < ownerOfAmount.length; i = i + 1) {
+      _amountClaimed[sender] = _amountClaimed[sender] + ownerOfAmount[i].amount;
 
       if (_collection.isU2UCollection) {
         bytes memory _data;
@@ -216,7 +210,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     uint newMaxNFTPerWallet
   ) external virtual onlyOwner onlyAfterEnd {
     IRound(nextRound).receiveAndIncreaseMaxAmountNFT(
-      _round.maxAmountNFT.sub(_round.soldAmountNFT),
+      _round.maxAmountNFT - _round.soldAmountNFT,
       newMaxNFTPerWallet
     );
   }
@@ -225,22 +219,22 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     uint amount,
     uint newMaxNFTPerWallet
   ) external onlyRoundContract {
-    _round.maxAmountNFT = _round.maxAmountNFT.add(amount);
+    _round.maxAmountNFT = _round.maxAmountNFT + amount;
     _round.maxAmountNFTPerWallet = newMaxNFTPerWallet;
   }
 
   function _transferValueAndFee(uint value, uint price) internal {
-    uint fee = price.mul(feePercent).div(10000);
+    uint fee = price * feePercent / 10000;
 
     payable(feeReceiver).transfer(fee);
-    payable(_collection.owner).transfer(price.sub(fee));
-    payable(msg.sender).transfer(value.sub(price));
+    payable(_collection.owner).transfer(price - fee);
+    payable(msg.sender).transfer(value - price);
   }
 
   function _checkAndAddNewUser(address sender) internal {
     if (!isUserJoined[sender]) {
       isUserJoined[sender] = true;
-      _amountUser = _amountUser.add(1);
+      _amountUser = _amountUser + 1;
     }
   }
 
@@ -331,7 +325,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
   }
 
   function getClaimableAmount(address user) external onlyUnlocked view returns (uint) {
-    return _amountBought[user].sub(_amountClaimed[user]);
+    return _amountBought[user] - _amountClaimed[user];
   }
 
   function getOwnerOfAmount(address user)
