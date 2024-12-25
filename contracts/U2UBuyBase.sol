@@ -110,9 +110,10 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
   modifier onlyRoundContract() {
     address sender = msg.sender;
     address[] memory roundAddresses = IProjectManager(projectManager).getProject(_projectId).roundAddresses;
+    uint256 length = roundAddresses.length;
     bool isSenderARound = false;
 
-    for (uint i = 0; i < roundAddresses.length; i = i + 1) {
+    for (uint i = 0; i < length; i = i + 1) {
       if (roundAddresses[i] == sender) {
         isSenderARound = true;
       }
@@ -124,7 +125,8 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
 
   function checkOnlyInTimeframe() public view returns (bool) {
     (uint8 currentHour, uint8 currentMinute) = _getCurrentTime();
-    for (uint i = 0; i < uint(_timeframes.length); i = i + 1) {
+    uint256 timeframesLength = _timeframes.length;
+    for (uint i = 0; i < timeframesLength; i = i + 1) {
       if (
         currentHour >= _timeframes[i].hourStart &&
         currentMinute >= _timeframes[i].minuteStart &&
@@ -148,7 +150,8 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     require(msg.sender == owner() || isInitialized == false, "U2U: not owner");
     isInitialized = true;
     delete _timeframes;
-    for (uint i = 0; i < timeframes.length; i = i + 1) {
+    uint256 length = timeframes.length;
+    for (uint i = 0; i < length; i = i + 1) {
       _timeframes.push(timeframes[i]);
     }
   }
@@ -164,9 +167,10 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     require(_collection.isERC721, "U2U: project collection is ERC1155");
     address sender = msg.sender;
     LibStructs.Token[] memory ownerOfAmount = _ownerOfAmount[sender];
+    uint256 length = ownerOfAmount.length;
     delete _ownerOfAmount[sender];
-    _amountClaimed[sender] = _amountClaimed[sender] + ownerOfAmount.length;
-    for (uint i = 0; i < ownerOfAmount.length; i = i + 1) {
+    _amountClaimed[sender] = _amountClaimed[sender] + length;
+    for (uint i = 0; i < length; i = i + 1) {
       // _amountClaimed[sender] = ownerOfAmount.length;
 
       if (_collection.isU2UCollection) {
@@ -190,8 +194,9 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     require(!_collection.isERC721, "U2U: project collection is ERC721");
     address sender = msg.sender;
     LibStructs.Token[] memory ownerOfAmount = _ownerOfAmount[sender];
+    uint256 length = ownerOfAmount.length;
     delete _ownerOfAmount[sender];
-    for (uint i = 0; i < ownerOfAmount.length; i = i + 1) {
+    for (uint i = 0; i < length; i = i + 1) {
       _amountClaimed[sender] = _amountClaimed[sender] + ownerOfAmount[i].amount;
 
       if (_collection.isU2UCollection) {
@@ -226,9 +231,14 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
   function _transferValueAndFee(uint value, uint price) internal {
     uint fee = price * feePercent / 10000;
 
-    payable(feeReceiver).transfer(fee);
-    payable(_collection.owner).transfer(price - fee);
-    payable(msg.sender).transfer(value - price);
+    (bool feeSuccess, ) = payable(feeReceiver).call{value: fee}("");
+    require(feeSuccess, "U2U: fee transfer failed");
+
+    (bool ownerSuccess, ) = payable(_collection.owner).call{value: price - fee}("");
+    require(ownerSuccess, "U2U: owner transfer failed");
+
+    (bool senderSuccess, ) = payable(msg.sender).call{value: value - price}("");
+    require(senderSuccess, "U2U: sender transfer failed");
   }
 
   function _checkAndAddNewUser(address sender) internal {
@@ -242,8 +252,9 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     require(start != 0, "U2U: start=0");
     require(end > start, "U2U: end<start");
     address[] memory roundAddresses = IProjectManager(projectManager).getProject(_projectId).roundAddresses;
-    if (roundAddresses.length > 1) {
-      for (uint i = 0; i < roundAddresses.length; i++) {
+    uint256 length = roundAddresses.length;
+    if (length > 1) {
+      for (uint i = 0; i < length; i++) {
         if(roundAddresses[i] == address(this) && i == 0) {
           LibStructs.Round memory roundAfter = U2UBuyBase(roundAddresses[i + 1]).getRound();
           require(end < roundAfter.start, "U2U: end>roundAfter.start");
