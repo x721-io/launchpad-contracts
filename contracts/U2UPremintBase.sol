@@ -2,11 +2,6 @@
 pragma solidity ^0.8.20;
 pragma abicoder v2;
 
-// For Remix IDE use
-// import "@openzeppelin/contracts@3.4/math/SafeMath.sol";
-// import "@openzeppelin/contracts@3.4/access/Ownable.sol";
-
-
 import "./U2UBuyBase.sol";
 
 abstract contract U2UPremintBase is U2UBuyBase {

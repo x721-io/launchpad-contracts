@@ -2,13 +2,8 @@
 pragma solidity ^0.8.20;
 pragma abicoder v2;
 
-// For Remix IDE use
-// import "@openzeppelin/contracts@3.4/math/SafeMath.sol";
-// import "@openzeppelin/contracts@3.4/access/Ownable.sol";
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// import "./interfaces/IWETH.sol";
 import "./interfaces/IERC721Modified.sol";
 import "./interfaces/IERC1155Modified.sol";
 import "./interfaces/IERC721U2UMinimal.sol";
@@ -20,6 +15,16 @@ import "./libraries/LibStructs.sol";
 
 contract U2UPremintRoundWhitelist is Ownable, U2UPremintBase {
   
+  // Events
+  event BuyERC721(address buyer, uint projectId, address collection, uint tokenId);
+  event BuyERC1155(address buyer, uint projectId, address collection, uint tokenId, uint amount);
+  event AddWhitelistOwner(uint projectId, address[] users);
+  event RemoveWhitelistOwner(uint projectId, address[] users);
+  event AdminStatusUpdated(address admin, bool status);
+  event TokensRemoved(uint256 indexed tokenIndex, uint256 amount);
+  event SoldAmountUpdated(uint256 newAmount);
+  event UserAmountUpdated(address indexed user, uint256 newAmount);
+
   mapping(address => bool) private _isUserWhitelisted;
   mapping(address => bool) public isAdmin;
 
@@ -50,9 +55,9 @@ contract U2UPremintRoundWhitelist is Ownable, U2UPremintBase {
 
   function setAdmin(address admin, bool status) external onlyOwner {
     isAdmin[admin] = status;
+    emit AdminStatusUpdated(admin, status);
   }
 
-  event BuyERC721(address buyer, uint projectId, address collection, uint tokenId);
   function buyERC721()
     external
     payable
@@ -80,8 +85,13 @@ contract U2UPremintRoundWhitelist is Ownable, U2UPremintBase {
     uint tokenIndex = _pickTokenByIndex();
     uint tokenId = _tokens[tokenIndex].id;
     _round.soldAmountNFT = _round.soldAmountNFT + 1;
+    emit SoldAmountUpdated(_round.soldAmountNFT);
+    
     _amountBought[sender] = _amountBought[sender] + 1;
+    emit UserAmountUpdated(sender, _amountBought[sender]);
+    
     _removeTokenAtIndex(tokenIndex, 1);
+    emit TokensRemoved(tokenIndex, 1);
 
     IERC721Modified erc721Modified = IERC721Modified(_collection.collectionAddress);
     erc721Modified.safeTransferNFTFrom(_collection.owner, address(this), tokenId);
@@ -94,13 +104,6 @@ contract U2UPremintRoundWhitelist is Ownable, U2UPremintBase {
     emit BuyERC721(sender, _projectId, _collection.collectionAddress, tokenId);
   }
 
-  event BuyERC1155(
-    address buyer,
-    uint projectId,
-    address collection,
-    uint tokenId,
-    uint amount
-  );
   function buyERC1155(uint amount)
     external
     payable
@@ -125,8 +128,13 @@ contract U2UPremintRoundWhitelist is Ownable, U2UPremintBase {
 
     uint tokenId = _tokens[0].id;
     _round.soldAmountNFT = _round.soldAmountNFT + amount;
+    emit SoldAmountUpdated(_round.soldAmountNFT);
+    
     _amountBought[sender] = _amountBought[sender] + amount;
+    emit UserAmountUpdated(sender, _amountBought[sender]);
+    
     _removeTokenAtIndex(0, amount);
+    emit TokensRemoved(0, amount);
 
     IERC1155Modified erc1155Modified = IERC1155Modified(_collection.collectionAddress);
     erc1155Modified.safeTransferNFTFrom(_collection.owner, address(this), tokenId, amount);
@@ -139,7 +147,6 @@ contract U2UPremintRoundWhitelist is Ownable, U2UPremintBase {
     emit BuyERC1155(sender, _projectId, _collection.collectionAddress, tokenId, amount);
   }
 
-  event AddWhitelistOwner(uint projectId, address[] users);
   function addWhitelistOwner(address[] calldata users)
     external
     onlyUnlocked
@@ -156,7 +163,6 @@ contract U2UPremintRoundWhitelist is Ownable, U2UPremintBase {
     emit AddWhitelistOwner(_projectId, users);
   }
 
-  event RemoveWhitelistOwner(uint projectId, address[] users);
   function removeWhitelistOwner(address[] calldata users)
     external
     onlyUnlocked

@@ -21,6 +21,20 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
   using LibStructs for LibStructs.Round;
   using LibStructs for LibStructs.Collection;
 
+  // Events for storage updates
+  event TimeUpdated(uint256 start, uint256 end);
+  event ClaimTimeUpdated(uint256 startClaim);
+  event PriceUpdated(uint256 price);
+  event MaxAmountNFTUpdated(uint256 maxAmount);
+  event MaxAmountNFTPerWalletUpdated(uint256 maxAmountPerWallet);
+  event CollectionUpdated(LibStructs.Collection collection);
+  event FeeUpdated(uint16 feePercent);
+  event LockStatusUpdated(bool locked);
+  event TimeframesUpdated(LibStructs.Timeframe[] timeframes);
+  event RoundMaxAmountsIncreased(uint256 newMaxAmount, uint256 newMaxPerWallet);
+  event TokensClaimed(address indexed user, uint256 amount);
+  event NewUserAdded(address indexed user, uint256 totalUsers);
+
   constructor(address initialOwner) Ownable(initialOwner) {}
 
   uint internal _projectId;
@@ -154,6 +168,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     for (uint i = 0; i < length; i = i + 1) {
       _timeframes.push(timeframes[i]);
     }
+    emit TimeframesUpdated(timeframes);
   }
 
   function claimERC721()
@@ -170,6 +185,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     uint256 length = ownerOfAmount.length;
     delete _ownerOfAmount[sender];
     _amountClaimed[sender] = _amountClaimed[sender] + length;
+    emit TokensClaimed(sender, length);
     for (uint i = 0; i < length; i = i + 1) {
       // _amountClaimed[sender] = ownerOfAmount.length;
 
@@ -196,8 +212,11 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     LibStructs.Token[] memory ownerOfAmount = _ownerOfAmount[sender];
     uint256 length = ownerOfAmount.length;
     delete _ownerOfAmount[sender];
+    uint256 totalClaimed = 0;
     for (uint i = 0; i < length; i = i + 1) {
-      _amountClaimed[sender] = _amountClaimed[sender] + ownerOfAmount[i].amount;
+      uint256 amount = ownerOfAmount[i].amount;
+      _amountClaimed[sender] = _amountClaimed[sender] + amount;
+      totalClaimed = totalClaimed + amount;
 
       if (_collection.isU2UCollection) {
         bytes memory _data;
@@ -208,6 +227,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
         erc1155Modified.safeTransferNFTFrom(address(this), sender, ownerOfAmount[i].id, ownerOfAmount[i].amount);
       }
     }
+    emit TokensClaimed(sender, totalClaimed);
   }
 
   function transferNFTsToNextRound(
@@ -226,6 +246,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
   ) external onlyRoundContract {
     _round.maxAmountNFT = _round.maxAmountNFT + amount;
     _round.maxAmountNFTPerWallet = newMaxNFTPerWallet;
+    emit RoundMaxAmountsIncreased(_round.maxAmountNFT, newMaxNFTPerWallet);
   }
 
   function _transferValueAndFee(uint value, uint price) internal {
@@ -245,6 +266,7 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
     if (!isUserJoined[sender]) {
       isUserJoined[sender] = true;
       _amountUser = _amountUser + 1;
+      emit NewUserAdded(sender, _amountUser);
     }
   }
 
@@ -279,24 +301,29 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
 
     _round.start = start;
     _round.end = end;
+    emit TimeUpdated(start, end);
   }
 
   function setClaimTime(uint startClaim) external onlyOwner onlyBeforeStart {
     require(startClaim != 0, "U2U: startClaim=0");
     require(startClaim > _round.end, "U2U: startClaim<_round.end");
     _round.startClaim = startClaim;
+    emit ClaimTimeUpdated(startClaim);
   }
 
   function setPrice(uint price) external onlyOwner onlyBeforeStart {
     _round.price = price;
+    emit PriceUpdated(price);
   }
 
   function setMaxAmountNFT(uint max) external onlyOwner onlyBeforeStart {
     _round.maxAmountNFT = max;
+    emit MaxAmountNFTUpdated(max);
   }
 
   function setMaxAmountNFTPerWallet(uint max) external onlyOwner onlyBeforeStart {
     _round.maxAmountNFTPerWallet = max;
+    emit MaxAmountNFTPerWalletUpdated(max);
   }
 
   function setCollection(LibStructs.Collection calldata newCollection)
@@ -305,14 +332,17 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
   {
     require(msg.sender == projectManager, "U2U: caller not project manager");
     _collection = newCollection;
+    emit CollectionUpdated(newCollection);
   }
 
   function setFee(uint16 fee) external onlyOwner {
     feePercent = fee;
+    emit FeeUpdated(fee);
   }
 
   function lock() external onlyOwner {
     isLocked = true;
+    emit LockStatusUpdated(true);
   }
 
   function getRound() external onlyUnlocked view returns (LibStructs.Round memory) {
@@ -358,11 +388,6 @@ abstract contract U2UBuyBase is Ownable, IERC721Receiver, IERC1155Receiver, ERC1
   }
 
   function getTimeframes(uint index) external view returns (LibStructs.Timeframe memory) {
-    // LibStructs.Timeframe[] memory timeframes = new LibStructs.Timeframe[](_timeframes.length);
-    // for (uint i = 0; i < _timeframes.length; i = i.add(1)) {
-    //   timeframes[i] = _timeframes[i];
-    // }
-
     return _timeframes[index];
   }
 

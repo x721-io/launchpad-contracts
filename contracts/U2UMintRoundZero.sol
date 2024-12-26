@@ -2,10 +2,6 @@
 pragma solidity ^0.8.20;
 pragma abicoder v2;
 
-// For Remix IDE use
-// import "@openzeppelin/contracts@3.4/math/SafeMath.sol";
-// import "@openzeppelin/contracts@3.4/access/Ownable.sol";
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IERC721Modified.sol";
@@ -48,51 +44,6 @@ contract U2UMintRoundZero is Ownable, U2UBuyBase {
     _requiredCollection721 = IERC721Modified(requiredCollection721);
     setTimeframes(timeframes);
   }
-
-  // event BuyERC721U2U(address buyer, uint projectId, address collection, uint tokenId);
-  // function buyERC721U2U(IERC721U2UMinimal.Mint721Data calldata data)
-  //   external
-  //   payable
-  //   onlyAfterStart
-  //   onlyBeforeEnd
-  //   onlyHolderOrWhitelisted
-  //   onlyBelowMaxAmount721
-  //   onlyBelowMaxAmountUser721
-  //   onlyUnlocked
-  // {
-  //   require(_collection.isERC721, "U2U: project collection is not ERC721");
-  //   require(
-  //     _collection.isU2UCollection,
-  //     "U2U: this function only works with NFTs created from U2U contracts"
-  //   );
-
-  //   address sender = msg.sender;
-  //   uint value = msg.value;
-
-  //   require(
-  //     value >= _round.price,
-  //     "U2U: amount to transfer must be equal or greater than whitelist price"
-  //   );
-
-  //   _checkAndAddNewUser(sender);
-
-  //   _round.soldAmountNFT = _round.soldAmountNFT.add(1);
-  //   _amountBought[sender] = _amountBought[sender].add(1);
-
-  //   IERC721U2UMinimal erc721Minimal = IERC721U2UMinimal(_collection.collectionAddress);
-  //   if (_round.startClaim == 0) {
-  //     erc721Minimal.mintAndTransfer(data, sender);
-  //   } else {
-  //     erc721Minimal.mintAndTransfer(data, address(this));
-  //   }
-
-  //   LibStructs.Token memory newToken = LibStructs.Token(data.tokenId, 1);
-  //   _ownerOfAmount[sender].push(newToken);
-
-  //   _transferValueAndFee(value, _round.price);
-
-  //   emit BuyERC721U2U(sender, _projectId, _collection.collectionAddress, data.tokenId);
-  // }
 
   event BuyERC721(address buyer, uint projectId, address collection, uint tokenId);
   function buyERC721()
