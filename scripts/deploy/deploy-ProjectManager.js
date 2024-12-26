@@ -4,7 +4,7 @@ async function main() {
 
   console.log("Deploying contracts with the account:", deployer.address);
 
-  const u2uProjectManager = await ethers.deployContract("U2UProjectManager", ["0x2743eEC46576f76f47334569074242F3D9a90B44"]);
+  const u2uProjectManager = await ethers.deployContract("U2UProjectManager", [deployer.address]);
 
   console.log("u2uProjectManager address:", await u2uProjectManager.getAddress());
 }
